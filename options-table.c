@@ -53,6 +53,20 @@ static const char *options_table_status_justify_list[] = {
 static const char *options_table_status_position_list[] = {
 	"top", "bottom", NULL
 };
+static const char *options_table_sidebar_position_list[] = {
+	"left", "right", NULL
+};
+static const char *options_table_sidebar_mode_list[] = {
+	"full", "mini", NULL
+};
+static const char *options_table_sidebar_custom_default[] = {
+	"git  #(cd \"#{pane_current_path}\" 2>/dev/null && "
+	"git rev-parse --abbrev-ref HEAD 2>/dev/null || echo -)",
+	"load #(awk '{print $1, $2, $3}' /proc/loadavg 2>/dev/null || "
+	"sysctl -n vm.loadavg 2>/dev/null)",
+	"host #H",
+	NULL
+};
 static const char *options_table_bell_action_list[] = {
 	"none", "any", "current", "other", NULL
 };
@@ -1254,6 +1268,150 @@ const struct options_table_entry options_table[] = {
 	},
 
 	/* Window options. */
+	{ .name = "alert-history",
+	  .type = OPTIONS_TABLE_NUMBER,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .minimum = 0,
+	  .maximum = 1000,
+	  .default_num = 50,
+	  .text = "Number of alerts kept in the sidebar history."
+	},
+
+	{ .name = "sidebar",
+	  .type = OPTIONS_TABLE_FLAG,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_num = 1,
+	  .text = "Show the sidebar beside the panes."
+	},
+
+	{ .name = "sidebar-accent",
+	  .type = OPTIONS_TABLE_COLOUR,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_num = 0x0222f3ff, /* #22f3ff */
+	  .text = "Sidebar accent colour (border, title, current window)."
+	},
+
+	{ .name = "sidebar-accent2",
+	  .type = OPTIONS_TABLE_COLOUR,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_num = 0x02ff3ec9, /* #ff3ec9 */
+	  .text = "Sidebar secondary accent colour (section headers, bells)."
+	},
+
+	{ .name = "sidebar-busy-pattern",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "esc to interrupt|Esc to interrupt|[Tt]hinking|"
+			 "[Ww]orking|Running",
+	  .text = "Regular expression matched against the last lines of a "
+		  "pane to detect a busy agent."
+	},
+
+	{ .name = "sidebar-custom",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .flags = OPTIONS_TABLE_IS_ARRAY,
+	  .default_arr = options_table_sidebar_custom_default,
+	  .text = "Formats for the custom sidebar section, one array member "
+		  "per row. #() commands and #[] styles are allowed."
+	},
+
+	{ .name = "sidebar-custom-title",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "HOST",
+	  .text = "Title of the custom sidebar section."
+	},
+
+	{ .name = "sidebar-dim",
+	  .type = OPTIONS_TABLE_COLOUR,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_num = 0x02555b7a, /* #555b7a */
+	  .text = "Sidebar colour for secondary text."
+	},
+
+	{ .name = "sidebar-error",
+	  .type = OPTIONS_TABLE_COLOUR,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_num = 0x02ff4f6d, /* #ff4f6d */
+	  .text = "Sidebar colour for errors."
+	},
+
+	{ .name = "sidebar-interval",
+	  .type = OPTIONS_TABLE_NUMBER,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .minimum = 0,
+	  .maximum = 3600,
+	  .default_num = 1,
+	  .unit = "seconds",
+	  .text = "Sidebar refresh interval (0 refreshes only on events)."
+	},
+
+	{ .name = "sidebar-mode",
+	  .type = OPTIONS_TABLE_CHOICE,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .choices = options_table_sidebar_mode_list,
+	  .default_num = 0,
+	  .text = "Sidebar layout: full or a compact rail."
+	},
+
+	{ .name = "sidebar-ok",
+	  .type = OPTIONS_TABLE_COLOUR,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_num = 0x027dff5c, /* #7dff5c */
+	  .text = "Sidebar colour for success and activity."
+	},
+
+	{ .name = "sidebar-position",
+	  .type = OPTIONS_TABLE_CHOICE,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .choices = options_table_sidebar_position_list,
+	  .default_num = 0,
+	  .text = "Side of the terminal the sidebar is drawn on."
+	},
+
+	{ .name = "sidebar-sections",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "windows,agents,alerts,custom,buffers,keys",
+	  .text = "Sidebar sections and their order."
+	},
+
+	{ .name = "sidebar-style",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "bg=#0a0c16,fg=#d9dcea",
+	  .flags = OPTIONS_TABLE_IS_STYLE,
+	  .separator = ",",
+	  .text = "Style of the sidebar."
+	},
+
+	{ .name = "sidebar-wait-pattern",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "\\[[yY]/[nN]\\]|\\[[Yy]/n\\]|\\([yY]/[nN]\\)|"
+			 "[Yy]es/[Nn]o|Do you want|Allow|proceed\\?|assword:",
+	  .text = "Regular expression matched against the last lines of a "
+		  "pane to detect an agent waiting for input."
+	},
+
+	{ .name = "sidebar-warn",
+	  .type = OPTIONS_TABLE_COLOUR,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_num = 0x02ffc63a, /* #ffc63a */
+	  .text = "Sidebar colour for warnings and waiting agents."
+	},
+
+	{ .name = "sidebar-width",
+	  .type = OPTIONS_TABLE_NUMBER,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .minimum = 0,
+	  .maximum = 200,
+	  .default_num = 0,
+	  .text = "Width of the sidebar in columns; 0 picks a width from the "
+		  "terminal size (22%, between 30 and 60 columns)."
+	},
+
 	{ .name = "aggressive-resize",
 	  .type = OPTIONS_TABLE_FLAG,
 	  .scope = OPTIONS_TABLE_WINDOW,

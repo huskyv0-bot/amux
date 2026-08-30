@@ -957,7 +957,8 @@ tty_window_bigger(struct tty *tty)
 	struct client	*c = tty->client;
 	struct window	*w = c->session->curw->window;
 
-	return (tty->sx < w->sx || tty->sy - status_line_size(c) < w->sy);
+	return (tty->sx - sidebar_size(c) < w->sx ||
+	    tty->sy - status_line_size(c) < w->sy);
 }
 
 /* What offset should this window be drawn at? */
@@ -979,11 +980,12 @@ tty_window_offset1(struct tty *tty, u_int *ox, u_int *oy, u_int *sx, u_int *sy)
 	struct client		*c = tty->client;
 	struct window		*w = c->session->curw->window;
 	struct window_pane	*wp = w->active;
-	u_int			 cx, cy, lines;
+	u_int			 cx, cy, lines, sbw;
 
 	lines = status_line_size(c);
+	sbw = sidebar_size(c);
 
-	if (tty->sx >= w->sx && tty->sy - lines >= w->sy) {
+	if (tty->sx - sbw >= w->sx && tty->sy - lines >= w->sy) {
 		*ox = 0;
 		*oy = 0;
 		*sx = w->sx;
@@ -993,7 +995,7 @@ tty_window_offset1(struct tty *tty, u_int *ox, u_int *oy, u_int *sx, u_int *sy)
 		return (0);
 	}
 
-	*sx = tty->sx;
+	*sx = tty->sx - sbw;
 	*sy = tty->sy - lines;
 
 	if (c->pan_window == w) {
@@ -1561,6 +1563,7 @@ tty_set_client_cb(struct tty_ctx *ttyctx, struct client *c)
 	ttyctx->yoff = ttyctx->ryoff = wp->yoff;
 	if (status_at_line(c) == 0)
 		ttyctx->yoff += status_line_size(c);
+	ttyctx->xoff += sidebar_x_offset(c);
 
 	return (1);
 }

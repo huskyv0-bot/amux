@@ -1,0 +1,31 @@
+#!/bin/sh
+# amux — start or talk to the amux server. It uses its own socket, so a plain
+# tmux (and its sessions) is never touched.
+#
+#   amux                    attach to the most recent session, or create "main"
+#   amux attach NAME        attach to session NAME            (short: amux a NAME)
+#   amux new NAME           create session NAME and attach   (short: amux n NAME)
+#   amux ls | kill-server | notify -l ok "done" | ...   any tmux command is passed through
+#
+# AMUX_BIN and AMUX_SOCKET override the binary and the socket name.
+set -e
+bin="${AMUX_BIN:-$HOME/amux/tmux}"
+sock="${AMUX_SOCKET:-amux}"
+# Panes of a server started through this wrapper resolve `tmux` to the amux
+# binary (bin/tmux), so hooks and scripts inside them talk to the right server.
+case ":$PATH:" in *":$HOME/amux/bin:"*) ;; *) PATH="$HOME/amux/bin:$PATH"; export PATH ;; esac
+t() { exec "$bin" -L "$sock" "$@"; }
+case "${1:-}" in
+"")
+	if "$bin" -L "$sock" has-session 2>/dev/null; then t attach; else t new -s main; fi ;;
+attach|a)
+	shift
+	case "${1:-}" in ""|-*) t attach "$@" ;; *) n=$1; shift; t attach -t "$n" "$@" ;; esac ;;
+new|n)
+	shift
+	case "${1:-}" in ""|-*) t new "$@" ;; *) n=$1; shift; t new -s "$n" "$@" ;; esac ;;
+-h|--help|help)
+	sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+*)
+	t "$@" ;;
+esac

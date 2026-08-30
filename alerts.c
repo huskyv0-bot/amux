@@ -34,6 +34,8 @@ static int	alerts_check_all(struct window *);
 static int	alerts_check_bell(struct window *);
 static int	alerts_check_activity(struct window *);
 static int	alerts_check_silence(struct window *);
+static void	alerts_push_history(struct window *, enum alert_type,
+		    const char *);
 static void	alerts_set_message(struct winlink *, const char *,
 		    const char *);
 
@@ -179,6 +181,19 @@ alerts_queue(struct window *w, int flags)
 	}
 }
 
+static void
+alerts_push_history(struct window *w, enum alert_type type, const char *source)
+{
+	struct winlink	*wl = TAILQ_FIRST(&w->winlinks);
+	char		 msg[64];
+
+	if (wl != NULL)
+		xsnprintf(msg, sizeof msg, "%d:%s", wl->idx, w->name);
+	else
+		xsnprintf(msg, sizeof msg, "%s", w->name);
+	alert_push(type, w, w->active, source, msg);
+}
+
 static int
 alerts_check_bell(struct window *w)
 {
@@ -214,6 +229,7 @@ alerts_check_bell(struct window *w)
 		alerts_set_message(wl, "Bell", "visual-bell");
 	}
 
+	alerts_push_history(w, ALERT_BELL, "bell");
 	return (WINDOW_BELL);
 }
 
@@ -250,6 +266,7 @@ alerts_check_activity(struct window *w)
 		alerts_set_message(wl, "Activity", "visual-activity");
 	}
 
+	alerts_push_history(w, ALERT_ACTIVITY, "activity");
 	return (WINDOW_ACTIVITY);
 }
 
@@ -286,6 +303,7 @@ alerts_check_silence(struct window *w)
 		alerts_set_message(wl, "Silence", "visual-silence");
 	}
 
+	alerts_push_history(w, ALERT_SILENCE, "silence");
 	return (WINDOW_SILENCE);
 }
 

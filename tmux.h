@@ -88,7 +88,7 @@ struct winlink;
 
 /* Default configuration files and socket paths. */
 #ifndef TMUX_CONF
-#define TMUX_CONF "/etc/tmux.conf:~/.tmux.conf"
+#define TMUX_CONF "/etc/tmux.conf:~/.tmux.conf:~/.config/amux/amux.conf"
 #endif
 #ifndef TMUX_SOCK
 #define TMUX_SOCK "$TMUX_TMPDIR:" _PATH_TMP
@@ -1405,6 +1405,12 @@ struct window_pane {
 	struct window_pane_prompt *prompt_data;
 	u_int		 prompt_cx;
 
+	int		 sb_state;
+	int		 sb_override;
+	time_t		 sb_since;
+	char		*sb_cmd;
+	char		*sb_activity;
+
 	int		 border_gc_set;
 	struct grid_cell border_gc;
 	int		 active_border_gc_set;
@@ -1628,6 +1634,9 @@ struct session {
 	int		 statusat;
 	u_int		 statuslines;
 
+	int		 sidebarat;
+	u_int		 sidebarwidth;
+
 	struct options	*options;
 
 #define SESSION_ALERTED 0x1
@@ -1686,6 +1695,7 @@ struct mouse_event {
 
 	int		statusat;
 	u_int		statuslines;
+	u_int		sidebarx;
 
 	u_int		x;
 	u_int		y;
@@ -2079,6 +2089,58 @@ struct status_line {
 	struct style_line_entry entries[STATUS_LINES_LIMIT];
 };
 
+/* Alert history entry (sidebar). */
+enum alert_type {
+	ALERT_INFO,
+	ALERT_OK,
+	ALERT_WARN,
+	ALERT_ERROR,
+	ALERT_BELL,
+	ALERT_ACTIVITY,
+	ALERT_SILENCE
+};
+struct alert_entry {
+	u_int			 id;
+	time_t			 t;
+	enum alert_type		 type;
+	int			 w;
+	int			 wp;
+	char			*source;
+	char			*msg;
+	u_int			 count;
+	int			 read;
+	TAILQ_ENTRY(alert_entry) entry;
+};
+TAILQ_HEAD(alert_entries, alert_entry);
+
+/* Sidebar row target for the mouse. */
+struct sidebar_row {
+	int	type;
+#define SIDEBAR_ROW_NONE 0
+#define SIDEBAR_ROW_WINDOW 1
+#define SIDEBAR_ROW_PANE 2
+#define SIDEBAR_ROW_ALERT 3
+	int	id;
+};
+
+/* Sidebar. */
+struct sidebar {
+	struct event		 timer;
+	struct screen		 screen;
+	struct screen		 old;
+	struct sidebar_row	*rows;
+	u_int			 nrows;
+	int			 force;
+	int			 sel;
+};
+
+/* Sidebar pane states. */
+#define SIDEBAR_STATE_SHELL 0
+#define SIDEBAR_STATE_RUNNING 1
+#define SIDEBAR_STATE_BUSY 2
+#define SIDEBAR_STATE_WAITING 3
+#define SIDEBAR_STATE_DONE 4
+
 /* File in client. */
 typedef void (*client_file_cb) (struct client *, const char *, int, int,
     struct evbuffer *, void *);
@@ -2255,6 +2317,7 @@ struct client {
 	struct mouse_event	 click_event;
 
 	struct status_line	 status;
+	struct sidebar		 sidebar;
 	struct event		 cycle_timer;
 	enum client_theme	 theme;
 
@@ -2295,7 +2358,7 @@ struct client {
 #define CLIENT_CONTROL_PAUSEAFTER 0x100000000ULL
 #define CLIENT_CONTROL_WAITEXIT 0x200000000ULL
 #define CLIENT_WINDOWSIZECHANGED 0x400000000ULL
-/* 0x800000000ULL unused */
+#define CLIENT_REDRAWSIDEBAR 0x800000000ULL
 #define CLIENT_BRACKETPASTING 0x1000000000ULL
 #define CLIENT_ASSUMEPASTING 0x2000000000ULL
 #define CLIENT_WRITE_ACK 0x4000000000ULL
@@ -2306,7 +2369,8 @@ struct client {
 	 CLIENT_REDRAWSTATUSALWAYS|	\
 	 CLIENT_REDRAWBORDERS|		\
 	 CLIENT_REDRAWOVERLAY|		\
-	 CLIENT_REDRAWMENU)
+	 CLIENT_REDRAWMENU|		\
+	 CLIENT_REDRAWSIDEBAR)
 #define CLIENT_UNATTACHEDFLAGS	\
 	(CLIENT_DEAD|		\
 	 CLIENT_SUSPENDED|	\
@@ -3393,6 +3457,44 @@ void	 status_prompt_cursor(struct client *, u_int *, u_int *);
 enum prompt_key_result status_prompt_key(struct client *, key_code,
 	     struct mouse_event *);
 void	 status_prompt_update(struct client *, const char *, const char *);
+
+/* sidebar.c */
+void	 sidebar_update_cache(struct session *);
+u_int	 sidebar_size(struct client *);
+int	 sidebar_at_left(struct client *);
+u_int	 sidebar_x_offset(struct client *);
+u_int	 sidebar_x(struct client *);
+u_int	 sidebar_y(struct client *);
+u_int	 sidebar_height(struct client *);
+void	 sidebar_init(struct client *);
+void	 sidebar_free(struct client *);
+void	 sidebar_redraw_all(void);
+void	 sidebar_timer_start(struct client *);
+void	 sidebar_timer_start_all(void);
+const char *sidebar_state_name(int);
+int	 sidebar_state_from_name(const char *);
+int	 sidebar_pane_state(struct window_pane *);
+void	 sidebar_pane_set_state(struct window_pane *, int);
+void	 sidebar_pane_set_activity(struct window_pane *, const char *);
+struct window_pane *sidebar_selected(struct client *);
+void	 sidebar_select_move(struct client *, int);
+int	 sidebar_jump(struct client *, struct window_pane *);
+void	 sidebar_send_input(struct client *, struct window_pane *,
+	     const char *);
+int	 sidebar_preview(struct cmdq_item *, struct client *,
+	     struct window_pane *);
+void	 sidebar_set_width(struct client *, int);
+void	 sidebar_click(struct client *, u_int, u_int);
+int	 sidebar_redraw(struct client *);
+void	 sidebar_draw(struct client *, int);
+struct alert_entry *alert_push(enum alert_type, struct window *,
+	     struct window_pane *, const char *, const char *);
+u_int	 alert_unread_count(void);
+struct alert_entry *alert_next_unread(void);
+struct alert_entry *alert_find_by_id(u_int);
+void	 alert_mark_all_read(void);
+void	 alert_clear_all(void);
+int	 alert_jump(struct client *, struct alert_entry *);
 
 /* prompt.c */
 void	 prompt_set_options(struct prompt_create_data *, struct session *);

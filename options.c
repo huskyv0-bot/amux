@@ -1409,6 +1409,9 @@ options_push_changes(const char *name)
 	if (strcmp(name, "status") == 0 ||
 	    strcmp(name, "status-interval") == 0)
 		status_timer_start_all();
+	if (strcmp(name, "sidebar") == 0 ||
+	    strcmp(name, "sidebar-interval") == 0)
+		sidebar_timer_start_all();
 	if (strcmp(name, "status") == 0 ||
 	    strcmp(name, "status-position") == 0 ||
 	    strcmp(name, "pane-border-indicators") == 0 ||
@@ -1470,8 +1473,10 @@ options_push_changes(const char *name)
 
 	recalculate_sizes();
 	TAILQ_FOREACH(loop, &clients, entry) {
-		if (loop->session != NULL)
+		if (loop->session != NULL) {
+			tty_update_client_offset(loop);
 			server_redraw_client(loop);
+		}
 	}
 }
 

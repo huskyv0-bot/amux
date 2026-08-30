@@ -11,7 +11,7 @@ dist_EXTRA_tmux_SOURCES = compat/*.[ch]
 # Preprocessor flags.
 AM_CPPFLAGS += @XOPEN_DEFINES@ \
 	-DTMUX_VERSION='"@VERSION@"' \
-	-DTMUX_CONF='"$(sysconfdir)/tmux.conf:~/.tmux.conf:$$XDG_CONFIG_HOME/tmux/tmux.conf:~/.config/tmux/tmux.conf"' \
+	-DTMUX_CONF='"$(sysconfdir)/tmux.conf:~/.tmux.conf:$$XDG_CONFIG_HOME/tmux/tmux.conf:~/.config/tmux/tmux.conf:$$XDG_CONFIG_HOME/amux/amux.conf:~/.config/amux/amux.conf"' \
 	-DTMUX_LOCK_CMD='"@DEFAULT_LOCK_CMD@"' \
 	-DTMUX_TERM='"@DEFAULT_TERM@"' \
 	-DTMUX_MOUSE=1
@@ -121,6 +121,8 @@ dist_tmux_SOURCES = \
 	cmd-move-window.c \
 	cmd-new-session.c \
 	cmd-new-window.c \
+	cmd-notify.c \
+	cmd-sidebar.c \
 	cmd-parse.y \
 	cmd-paste-buffer.c \
 	cmd-pipe-pane.c \
@@ -201,6 +203,7 @@ dist_tmux_SOURCES = \
 	server-fn.c \
 	server.c \
 	session.c \
+	sidebar.c \
 	sort.c \
 	spawn.c \
 	status.c \

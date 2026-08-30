@@ -93,6 +93,7 @@ status_update_cache(struct session *s)
 		s->statusat = 0;
 	else
 		s->statusat = 1;
+	sidebar_update_cache(s);
 }
 
 /* Get screen line of status line. -1 means off. */
