@@ -379,6 +379,22 @@ key_bindings_init_done(__unused struct cmdq_item *item, __unused void *data)
 	return (CMD_RETURN_NORMAL);
 }
 
+#define AMUX_OVERVIEW_FORMAT \
+	"#{?pane_format," \
+	    "#{?#{==:#{pane_agent_state},shell}," \
+		"#[dim]#{pane_current_command}#[nodim]," \
+		"#[bold]#{pane_current_command}#[nobold]  " \
+		"#{?#{==:#{pane_agent_state},waiting},#[fg=yellow]! waiting,#{?#{==:#{pane_agent_state},busy},#[fg=green]busy,#{?#{==:#{pane_agent_state},done},#[fg=cyan]done,running}}}" \
+		"#[default]  #{?#{==:#{pane_agent_activity},},,#{pane_agent_activity}  }" \
+		"#[dim]#{e|/:#{pane_agent_since},60}m#[nodim]" \
+		"#{?#{==:#{pane_agent_task},},,  #[dim]· #{pane_agent_task}#[nodim]}" \
+	    "}," \
+	    "#{?window_format," \
+		"#{window_name}#{?window_bell_flag, !,}  #[dim]#{window_panes} panes#[nodim]," \
+		"#{session_name}  #[dim]#{session_windows} windows#[nodim]" \
+	    "}" \
+	"}"
+
 void
 key_bindings_init(void)
 {
@@ -443,6 +459,25 @@ key_bindings_init(void)
 		"bind -N 'Choose a window from a list' w { choose-tree -Zw }",
 		"bind -N 'Kill the active pane' x { confirm-before -p\"kill-pane #P? (y/n)\" kill-pane }",
 		"bind -N 'Zoom the active pane' z { resize-pane -Z }",
+		"bind -N 'Toggle the sidebar' b { set sidebar }",
+		"bind -N 'Move the sidebar to the other side' B { if -F '#{==:#{sidebar-position},left}' { set sidebar-position right } { set sidebar-position left } }",
+		"bind -N 'Jump to the oldest unread alert' N { notify -n }",
+		"bind -N 'Clear all alerts' C-n { notify -C }",
+		"bind -N 'Select agents in the sidebar' S { switch-client -T sidebar }",
+		"bind -N 'Overview of all agents with a preview' O { choose-tree -Z -F \"" AMUX_OVERVIEW_FORMAT "\" }",
+		"bind -N 'Make the sidebar narrower' -r < { sidebar -w -4 }",
+		"bind -N 'Make the sidebar wider' -r > { sidebar -w 4 }",
+		"bind -Tsidebar -N 'Select the next agent' j { sidebar -n ; switch-client -T sidebar }",
+		"bind -Tsidebar -N 'Select the previous agent' k { sidebar -p ; switch-client -T sidebar }",
+		"bind -Tsidebar -N 'Select the next agent' Down { sidebar -n ; switch-client -T sidebar }",
+		"bind -Tsidebar -N 'Select the previous agent' Up { sidebar -p ; switch-client -T sidebar }",
+		"bind -Tsidebar -N 'Jump to the selected agent' Enter { sidebar -j }",
+		"bind -Tsidebar -N 'Peek at the scrollback of the selected agent' p { sidebar -P ; switch-client -T sidebar }",
+		"bind -Tsidebar -N 'Kill the selected agent' K { confirm-before -p 'kill #{sidebar_selected_cmd} (#{sidebar_selected_pane})? (y/n)' { sidebar -k } ; switch-client -T sidebar }",
+		"bind -Tsidebar -N 'Send a line to the selected agent' i { command-prompt -p '#{sidebar_selected_cmd} >' { sidebar -i '%%' } ; switch-client -T sidebar }",
+		"bind -Tsidebar -N 'Jump to the oldest unread alert' n { notify -n ; switch-client -T sidebar }",
+		"bind -Tsidebar -N 'Leave agent selection' q { switch-client -T root }",
+		"bind -Tsidebar -N 'Leave agent selection' Escape { switch-client -T root }",
 		"bind -N 'Swap the active pane with the pane above' '{' { swap-pane -U }",
 		"bind -N 'Swap the active pane with the pane below' '}' { swap-pane -D }",
 		"bind -N 'Show messages' '~' { show-messages }",

@@ -76,6 +76,8 @@ extern const struct cmd_entry cmd_new_session_entry;
 extern const struct cmd_entry cmd_new_window_entry;
 extern const struct cmd_entry cmd_next_layout_entry;
 extern const struct cmd_entry cmd_next_window_entry;
+extern const struct cmd_entry cmd_notify_entry;
+extern const struct cmd_entry cmd_sidebar_entry;
 extern const struct cmd_entry cmd_paste_buffer_entry;
 extern const struct cmd_entry cmd_pipe_pane_entry;
 extern const struct cmd_entry cmd_previous_layout_entry;
@@ -170,6 +172,8 @@ const struct cmd_entry *cmd_table[] = {
 	&cmd_new_window_entry,
 	&cmd_next_layout_entry,
 	&cmd_next_window_entry,
+	&cmd_notify_entry,
+	&cmd_sidebar_entry,
 	&cmd_paste_buffer_entry,
 	&cmd_pipe_pane_entry,
 	&cmd_previous_layout_entry,
@@ -767,10 +771,14 @@ cmd_mouse_at(struct window_pane *wp, struct mouse_event *m, u_int *xp,
 	u_int	x, y;
 
 	if (last) {
-		x = m->lx + m->ox;
+		if (m->lx < m->sidebarx)
+			return (-1);
+		x = m->lx - m->sidebarx + m->ox;
 		y = m->ly + m->oy;
 	} else {
-		x = m->x + m->ox;
+		if (m->x < m->sidebarx)
+			return (-1);
+		x = m->x - m->sidebarx + m->ox;
 		y = m->y + m->oy;
 	}
 	log_debug("%s: x=%u, y=%u%s", __func__, x, y, last ? " (last)" : "");

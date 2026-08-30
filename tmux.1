@@ -364,6 +364,36 @@ Choose the current window interactively.
 Kill the current pane.
 .It z
 Toggle zoom state of the current pane.
+.It b
+Toggle the sidebar.
+.It B
+Move the sidebar to the other side of the terminal.
+.It N
+Jump to the window and pane of the oldest unread alert in the sidebar.
+.It C-n
+Clear all alerts in the sidebar.
+.It S
+Select agents in the sidebar: then
+.Ql j
+and
+.Ql k
+move the selection,
+.Ql Enter
+jumps to it,
+.Ql p
+peeks at its scrollback in a popup,
+.Ql K
+kills it (after confirmation),
+.Ql i
+sends it a line of input and
+.Ql q
+leaves the selection.
+.It <
+.It >
+Make the sidebar narrower or wider.
+.It O
+Show an overview of all sessions, windows and panes with agent state and
+activity, and a preview of the selected pane.
 .It Tab
 Choose a new window and session by fuzzy matching.
 .It {
@@ -5179,6 +5209,13 @@ being off),
 means only activity in windows other than the current window are ignored and
 .Ic other
 means activity in the current window is ignored but not those in other windows.
+.It Ic alert\-history Ar number
+Set the number of alerts kept in the sidebar alert history.
+Alerts come from bells, activity and silence monitoring, from agent panes
+detected as waiting for input, and from the
+.Ic notify
+command.
+Zero disables the history.
 .It Ic assume\-paste\-time Ar milliseconds
 If keys are entered faster than one in
 .Ar milliseconds ,
@@ -5487,6 +5524,95 @@ is on.
 Formats are expanded, see the
 .Sx FORMATS
 section.
+.It Xo Ic sidebar
+.Op Ic on | off
+.Xc
+Show the sidebar beside the panes.
+The sidebar takes
+.Ic sidebar\-width
+columns away from the window area and shows the window list, the state of
+agent panes, the alert history and the paste buffers.
+It is hidden automatically when the terminal is too narrow.
+.It Ic sidebar\-accent Ar colour
+.It Ic sidebar\-accent2 Ar colour
+.It Ic sidebar\-custom[] Ar format
+.It Ic sidebar\-custom\-title Ar title
+Rows of the custom sidebar section, one array member per row, each expanded
+as a format (so
+.Ql #()
+commands and
+.Ql #[]
+styles work), and the title of the section.
+The default shows the git branch of the active pane, the load average and the
+host name.
+.It Ic sidebar\-dim Ar colour
+.It Ic sidebar\-ok Ar colour
+.It Ic sidebar\-warn Ar colour
+.It Ic sidebar\-error Ar colour
+Colours used in the sidebar:
+.Ic sidebar\-accent
+for the border, title and current window;
+.Ic sidebar\-accent2
+for section headers and bells;
+.Ic sidebar\-dim
+for secondary text;
+.Ic sidebar\-ok ,
+.Ic sidebar\-warn
+and
+.Ic sidebar\-error
+for alert levels and agent states.
+The defaults are RGB colours; terminals without RGB support use the nearest
+256-colour equivalent.
+.It Ic sidebar\-busy\-pattern Ar regex
+.It Ic sidebar\-wait\-pattern Ar regex
+Extended regular expressions matched against the last visible lines of each
+pane whose foreground process is not the shell.
+A match of
+.Ic sidebar\-busy\-pattern
+marks the pane as busy, a match of
+.Ic sidebar\-wait\-pattern
+as waiting for input (which also adds an alert).
+Both are global options; use
+.Ic notify
+with
+.Fl s
+to set the state explicitly instead.
+.It Ic sidebar\-interval Ar interval
+Refresh the sidebar every
+.Ar interval
+seconds.
+Zero refreshes only when something changes.
+.It Xo Ic sidebar\-mode
+.Op Ic full | mini
+.Xc
+Draw the full sidebar or a compact rail that only shows the window indexes
+and the number of unread alerts.
+.It Xo Ic sidebar\-position
+.Op Ic left | right
+.Xc
+Set the side of the terminal the sidebar is drawn on.
+.It Ic sidebar\-sections Ar sections
+A comma-separated list of the sidebar sections to show, in order.
+The available sections are
+.Ql windows ,
+.Ql agents ,
+.Ql alerts ,
+.Ql custom ,
+.Ql buffers
+and
+.Ql keys .
+The alerts section takes any space left over.
+.It Ic sidebar\-style Ar style
+Set the sidebar style.
+For how to specify
+.Ar style ,
+see the
+.Sx STYLES
+section.
+.It Ic sidebar\-width Ar width
+Set the width of the sidebar in columns.
+Zero (the default) picks a width from the terminal size: 22% of the columns,
+between 30 and 60.
 .It Xo Ic silence\-action
 .Op Ic any | none | current | other
 .Xc
@@ -7260,6 +7386,7 @@ The following variables are available, where appropriate:
 .Bl -column "XXXXXXXXXXXXXXXXXXX" "XXXXX"
 .It Sy "Variable name" Ta Sy "Alias" Ta Sy "Replaced with"
 .It Li "active_window_index" Ta "" Ta "Index of active window in session"
+.It Li "alert_count" Ta "" Ta "Number of unread sidebar alerts"
 .It Li "alternate_on" Ta "" Ta "1 if pane is in alternate screen"
 .It Li "alternate_saved_x" Ta "" Ta "Saved cursor X in alternate screen"
 .It Li "alternate_saved_y" Ta "" Ta "Saved cursor Y in alternate screen"
@@ -7380,6 +7507,10 @@ The following variables are available, where appropriate:
 .It Li "option_value_only" Ta "" Ta "1 if only option values will be shown"
 .It Li "origin_flag" Ta "" Ta "Pane origin flag"
 .It Li "pane_active" Ta "" Ta "1 if active pane"
+.It Li "pane_agent_activity" Ta "" Ta "Activity text of pane set with notify -a"
+.It Li "pane_agent_since" Ta "" Ta "Seconds the pane has been in its agent state"
+.It Li "pane_agent_state" Ta "" Ta "Sidebar state of pane (shell, running, busy, waiting, done)"
+.It Li "pane_agent_task" Ta "" Ta "What the pane is working on (notify -T or pane title)"
 .It Li "pane_at_bottom" Ta "" Ta "1 if pane is at the bottom of window"
 .It Li "pane_at_left" Ta "" Ta "1 if pane is at the left of window"
 .It Li "pane_at_right" Ta "" Ta "1 if pane is at the right of window"
@@ -7486,6 +7617,7 @@ The following variables are available, where appropriate:
 .It Li "session_stack" Ta "" Ta "Window indexes in most recent order"
 .It Li "session_windows" Ta "" Ta "Number of windows in session"
 .It Li "socket_path" Ta "" Ta "Server socket path"
+.It Li "sidebar_width" Ta "" Ta "Width of the sidebar for the client, 0 if hidden"
 .It Li "sixel_support" Ta "" Ta "1 if server has support for SIXEL"
 .It Li "start_time" Ta "" Ta "Server start time"
 .It Li "synchronized_output_flag" Ta "" Ta "1 if pane has synchronized output enabled"
@@ -8418,6 +8550,99 @@ or
 .Fl k
 option.
 .Tg showphist
+.It Xo Ic sidebar
+.Op Fl jknPp
+.Op Fl c Ar target\-client
+.Op Fl i Ar text
+.Op Fl w Ar adjustment
+.Op Fl t Ar target\-pane
+.Xc
+Work with the agent selected in the sidebar of
+.Ar target\-client .
+.Fl t
+selects
+.Ar target\-pane ,
+.Fl n
+and
+.Fl p
+select the next or previous agent.
+.Fl j
+jumps to the selected agent,
+.Fl P
+shows its scrollback in a popup,
+.Fl k
+kills it and
+.Fl i
+sends it
+.Ar text
+followed by Enter.
+.Fl w
+changes the sidebar width by
+.Ar adjustment
+columns.
+.It Xo Ic notify
+.Op Fl a Ar activity
+.Op Fl Cnr
+.Op Fl c Ar target\-client
+.Op Fl l Ar level
+.Op Fl s Ar state
+.Op Fl S Ar source
+.Op Fl t Ar target\-pane
+.Op Ar message
+.Xc
+.Fl a
+sets the activity text shown beside the agent in the sidebar (for example the
+tool a coding agent is running) and
+.Fl T
+what the agent is working on, shown under the agent (by default the pane
+title is used); an empty string clears either.
+.Pp
+Add
+.Ar message
+to the sidebar alert history, tagged with
+.Ar target\-pane
+so that the alert can be jumped to.
+.Ar message
+is expanded as a format.
+.Fl l
+sets the level to one of
+.Ql info
+(the default),
+.Ql ok ,
+.Ql warn ,
+.Ql error
+or
+.Ql bell ,
+and
+.Fl S
+overrides the source label shown beside the alert (by default the command
+running in the pane or the window name).
+.Pp
+.Fl s
+sets the agent state of
+.Ar target\-pane
+to one of
+.Ql busy ,
+.Ql waiting ,
+.Ql done ,
+.Ql running ,
+.Ql idle
+or
+.Ql auto
+(return to automatic detection); the state is reset when the foreground
+command of the pane changes.
+This is intended to be called from hooks of the tool running in the pane, for
+example a
+.Ql Stop
+hook that runs
+.Ql tmux notify -s done "finished" .
+.Pp
+.Fl n
+jumps to the window and pane of the oldest unread alert and marks it read,
+.Fl r
+marks all alerts read and
+.Fl C
+removes them.
 .It Xo Ic show\-prompt\-history
 .Op Fl T Ar prompt\-type
 .Xc

@@ -171,6 +171,7 @@ screen_write_set_client_cb(struct tty_ctx *ttyctx, struct client *c)
 
 	if (status_at_line(c) == 0)
 		ttyctx->yoff += status_line_size(c);
+	ttyctx->xoff += sidebar_x_offset(c);
 
 	return (1);
 }

@@ -1429,6 +1429,92 @@ format_cb_mouse_status_range(struct format_tree *ft)
 	return (NULL);
 }
 
+/* Callback for alert_count. */
+static void *
+format_cb_alert_count(__unused struct format_tree *ft)
+{
+	return (format_printf("%u", alert_unread_count()));
+}
+
+/* Callback for pane_agent_activity. */
+static void *
+format_cb_pane_agent_activity(struct format_tree *ft)
+{
+	if (ft->wp == NULL)
+		return (NULL);
+	if (ft->wp->sb_activity == NULL)
+		return (xstrdup(""));
+	return (xstrdup(ft->wp->sb_activity));
+}
+
+/* Callback for pane_agent_since. */
+static void *
+format_cb_pane_agent_since(struct format_tree *ft)
+{
+	time_t	secs;
+
+	if (ft->wp == NULL)
+		return (NULL);
+	if (ft->wp->sb_state == SIDEBAR_STATE_SHELL)
+		return (xstrdup("0"));
+	secs = time(NULL) - ft->wp->sb_since;
+	if (secs < 0)
+		secs = 0;
+	return (format_printf("%lld", (long long)secs));
+}
+
+/* Callback for pane_agent_task. */
+static void *
+format_cb_pane_agent_task(struct format_tree *ft)
+{
+	const char	*task;
+
+	if (ft->wp == NULL)
+		return (NULL);
+	task = sidebar_pane_task(ft->wp);
+	return (xstrdup(task != NULL ? task : ""));
+}
+
+/* Callback for pane_agent_state. */
+static void *
+format_cb_pane_agent_state(struct format_tree *ft)
+{
+	if (ft->wp == NULL)
+		return (NULL);
+	return (xstrdup(sidebar_state_name(ft->wp->sb_state)));
+}
+
+/* Callback for sidebar_selected_cmd. */
+static void *
+format_cb_sidebar_selected_cmd(struct format_tree *ft)
+{
+	struct window_pane	*wp;
+
+	if (ft->c == NULL || (wp = sidebar_selected(ft->c)) == NULL)
+		return (xstrdup(""));
+	return (xstrdup(wp->sb_cmd != NULL ? wp->sb_cmd : ""));
+}
+
+/* Callback for sidebar_selected_pane. */
+static void *
+format_cb_sidebar_selected_pane(struct format_tree *ft)
+{
+	struct window_pane	*wp;
+
+	if (ft->c == NULL || (wp = sidebar_selected(ft->c)) == NULL)
+		return (xstrdup(""));
+	return (format_printf("%%%u", wp->id));
+}
+
+/* Callback for sidebar_width. */
+static void *
+format_cb_sidebar_width(struct format_tree *ft)
+{
+	if (ft->c == NULL)
+		return (NULL);
+	return (format_printf("%u", sidebar_size(ft->c)));
+}
+
 /* Callback for alternate_on. */
 static void *
 format_cb_alternate_on(struct format_tree *ft)
@@ -3525,6 +3611,9 @@ static const struct format_table_entry format_table[] = {
 	{ "active_window_index", FORMAT_TABLE_STRING,
 	  format_cb_active_window_index
 	},
+	{ "alert_count", FORMAT_TABLE_STRING,
+	  format_cb_alert_count
+	},
 	{ "alternate_on", FORMAT_TABLE_STRING,
 	  format_cb_alternate_on
 	},
@@ -3743,6 +3832,18 @@ static const struct format_table_entry format_table[] = {
 	},
 	{ "pane_active", FORMAT_TABLE_STRING,
 	  format_cb_pane_active
+	},
+	{ "pane_agent_activity", FORMAT_TABLE_STRING,
+	  format_cb_pane_agent_activity
+	},
+	{ "pane_agent_since", FORMAT_TABLE_STRING,
+	  format_cb_pane_agent_since
+	},
+	{ "pane_agent_state", FORMAT_TABLE_STRING,
+	  format_cb_pane_agent_state
+	},
+	{ "pane_agent_task", FORMAT_TABLE_STRING,
+	  format_cb_pane_agent_task
 	},
 	{ "pane_at_bottom", FORMAT_TABLE_STRING,
 	  format_cb_pane_at_bottom
@@ -4013,6 +4114,15 @@ static const struct format_table_entry format_table[] = {
 	},
 	{ "session_windows", FORMAT_TABLE_STRING,
 	  format_cb_session_windows
+	},
+	{ "sidebar_selected_cmd", FORMAT_TABLE_STRING,
+	  format_cb_sidebar_selected_cmd
+	},
+	{ "sidebar_selected_pane", FORMAT_TABLE_STRING,
+	  format_cb_sidebar_selected_pane
+	},
+	{ "sidebar_width", FORMAT_TABLE_STRING,
+	  format_cb_sidebar_width
 	},
 	{ "sixel_support", FORMAT_TABLE_STRING,
 	  format_cb_sixel_support
