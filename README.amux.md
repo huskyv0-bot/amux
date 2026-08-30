@@ -59,7 +59,7 @@ matching.
 | `prefix S`   | Agent mode: `j`/`k` select, `Enter` jump, `p` peek at the scrollback (popup), `K` kill (with confirm), `i` send a line, `n` next alert, `q` back |
 | `prefix <` / `>` | Narrower / wider sidebar |
 | `prefix O`   | Overview: every session, window and pane as a tree with agent state, activity and time, plus a live preview of the selected pane (`Enter` jumps, `q` closes). The big version of the sidebar. |
-| `prefix H`   | HQ popup — netwatch for now (tasks, cockpit runs, traces, approvals); theme only |
+| `prefix H`   | HQ popup — tasks, runs, approvals, traces; dispatches workers into amux (repo `~/netwatch`, command `hq`); theme only |
 | `prefix T`   | Palette menu (theme only, see below) |
 
 ## Options (session options, `set -g …`)
