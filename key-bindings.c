@@ -387,6 +387,7 @@ key_bindings_init_done(__unused struct cmdq_item *item, __unused void *data)
 		"#{?#{==:#{pane_agent_state},waiting},#[fg=yellow]! waiting,#{?#{==:#{pane_agent_state},busy},#[fg=green]busy,#{?#{==:#{pane_agent_state},done},#[fg=cyan]done,running}}}" \
 		"#[default]  #{?#{==:#{pane_agent_activity},},,#{pane_agent_activity}  }" \
 		"#[dim]#{e|/:#{pane_agent_since},60}m#[nodim]" \
+		"#{?#{==:#{pane_agent_task},},,  #[dim]· #{pane_agent_task}#[nodim]}" \
 	    "}," \
 	    "#{?window_format," \
 		"#{window_name}#{?window_bell_flag, !,}  #[dim]#{window_panes} panes#[nodim]," \

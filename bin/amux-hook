@@ -54,14 +54,14 @@ def main():
             ).returncode
 
         try:
-            if run(list(args)) != 0 and "-a" in args:
-                # Older amux server without -a: drop the activity text.
+            if run(list(args)) != 0 and ("-a" in args or "-T" in args):
+                # Older amux server without -a/-T: drop those and retry.
                 rest, skip = [], False
                 for a in args:
                     if skip:
                         skip = False
                         continue
-                    if a == "-a":
+                    if a in ("-a", "-T"):
                         skip = True
                         continue
                     rest.append(a)
@@ -73,7 +73,7 @@ def main():
     if event == "SessionStart":
         notify("-s", "running", "-a", "ready")
     elif event == "UserPromptSubmit":
-        notify("-s", "busy", "-a", "prompt: " + short(data.get("prompt", "")))
+        notify("-s", "busy", "-T", short(data.get("prompt", ""), 60), "-a", "thinking")
     elif event == "PreToolUse":
         tool = data.get("tool_name", "") or "tool"
         ti = data.get("tool_input") or {}

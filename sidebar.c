@@ -474,6 +474,8 @@ sidebar_pane_state(struct window_pane *wp)
 		wp->sb_override = -1;
 		free(wp->sb_activity);
 		wp->sb_activity = NULL;
+		free(wp->sb_task);
+		wp->sb_task = NULL;
 	} else
 		free(cmd);
 
@@ -509,9 +511,11 @@ sidebar_pane_state(struct window_pane *wp)
 		free(tail);
 	}
 
-	if (state == SIDEBAR_STATE_SHELL && wp->sb_activity != NULL) {
+	if (state == SIDEBAR_STATE_SHELL) {
 		free(wp->sb_activity);
 		wp->sb_activity = NULL;
+		free(wp->sb_task);
+		wp->sb_task = NULL;
 	}
 	if (state != wp->sb_state) {
 		if (state == SIDEBAR_STATE_WAITING &&
@@ -552,6 +556,51 @@ sidebar_pane_set_activity(struct window_pane *wp, const char *text)
 	else
 		wp->sb_activity = xstrdup(text);
 	sidebar_redraw_all();
+}
+
+/* Set (or clear) what a pane is working on. */
+void
+sidebar_pane_set_task(struct window_pane *wp, const char *text)
+{
+	free(wp->sb_task);
+	if (text == NULL || *text == '\0')
+		wp->sb_task = NULL;
+	else
+		wp->sb_task = xstrdup(text);
+	sidebar_redraw_all();
+}
+
+/*
+ * What a pane is working on: the text set with notify -T, or the pane title
+ * (Claude Code sets it to a summary of the conversation), unless that is
+ * just the host name.
+ */
+const char *
+sidebar_pane_task(struct window_pane *wp)
+{
+	static char	 host[HOST_NAME_MAX + 1];
+	static int	 host_set;
+	const char	*title;
+
+	if (wp->sb_state == SIDEBAR_STATE_SHELL)
+		return (NULL);
+	if (wp->sb_task != NULL)
+		return (wp->sb_task);
+	if (!host_set) {
+		if (gethostname(host, sizeof host) != 0)
+			*host = '\0';
+		host_set = 1;
+	}
+	title = wp->base.title;
+	if (title == NULL || *title == '\0' || strcmp(title, host) == 0)
+		return (NULL);
+	/* Skip the sparkle Claude Code puts in front of its titles. */
+	if (strncmp(title, "\xe2\x9c\xb3 ", 4) == 0 ||
+	    strncmp(title, "\xe2\x9c\xbb ", 4) == 0)
+		title += 4;
+	if (*title == '\0')
+		return (NULL);
+	return (title);
 }
 
 /* Add an alert to the history. */
@@ -1226,7 +1275,7 @@ sidebar_draw_agents(struct sidebar_draw *d, u_int avail)
 	struct winlink		*wl;
 	struct window_pane	*wp;
 	const struct grid_cell	*icongc, *stategc;
-	const char		*icon, *state;
+	const char		*icon, *state, *task;
 	char			 elapsed[16], where[32], text[48];
 	u_int			 y, namew = 8, x0 = 2;
 	int			 selected;
@@ -1300,6 +1349,14 @@ sidebar_draw_agents(struct sidebar_draw *d, u_int avail)
 			sidebar_row_target(d, y, SIDEBAR_ROW_PANE, wp->id);
 			y++;
 			avail--;
+
+			task = sidebar_pane_task(wp);
+			if (task != NULL && avail != 0) {
+				sidebar_put(d, x0 + 2, y, &d->dim, -1, "%s", task);
+				sidebar_row_target(d, y, SIDEBAR_ROW_PANE, wp->id);
+				y++;
+				avail--;
+			}
 		}
 	}
 	d->y = y;
@@ -1591,13 +1648,25 @@ sidebar_section_min(enum sidebar_section section)
 static u_int
 sidebar_section_natural(struct sidebar_draw *d, enum sidebar_section section)
 {
-	u_int	n = 0;
+	struct winlink		*wl;
+	struct window_pane	*wp;
+	u_int			 n = 0;
 
 	switch (section) {
 	case SIDEBAR_SECTION_WINDOWS:
 		return (2 + d->nwindows);
 	case SIDEBAR_SECTION_AGENTS:
-		return (2 + (d->nagents == 0 ? 1 : d->nagents));
+		if (d->nagents == 0)
+			return (3);
+		n = 0;
+		RB_FOREACH(wl, winlinks, &d->s->windows) {
+			TAILQ_FOREACH(wp, &wl->window->panes, entry) {
+				if (wp->sb_state == SIDEBAR_STATE_SHELL)
+					continue;
+				n += 1 + (sidebar_pane_task(wp) != NULL);
+			}
+		}
+		return (2 + n);
 	case SIDEBAR_SECTION_ALERTS:
 		return (2 + (alert_total == 0 ? 1 : alert_total));
 	case SIDEBAR_SECTION_CUSTOM:

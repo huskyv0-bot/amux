@@ -1463,6 +1463,18 @@ format_cb_pane_agent_since(struct format_tree *ft)
 	return (format_printf("%lld", (long long)secs));
 }
 
+/* Callback for pane_agent_task. */
+static void *
+format_cb_pane_agent_task(struct format_tree *ft)
+{
+	const char	*task;
+
+	if (ft->wp == NULL)
+		return (NULL);
+	task = sidebar_pane_task(ft->wp);
+	return (xstrdup(task != NULL ? task : ""));
+}
+
 /* Callback for pane_agent_state. */
 static void *
 format_cb_pane_agent_state(struct format_tree *ft)
@@ -3829,6 +3841,9 @@ static const struct format_table_entry format_table[] = {
 	},
 	{ "pane_agent_state", FORMAT_TABLE_STRING,
 	  format_cb_pane_agent_state
+	},
+	{ "pane_agent_task", FORMAT_TABLE_STRING,
+	  format_cb_pane_agent_task
 	},
 	{ "pane_at_bottom", FORMAT_TABLE_STRING,
 	  format_cb_pane_at_bottom

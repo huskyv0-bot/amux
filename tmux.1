@@ -7510,6 +7510,7 @@ The following variables are available, where appropriate:
 .It Li "pane_agent_activity" Ta "" Ta "Activity text of pane set with notify -a"
 .It Li "pane_agent_since" Ta "" Ta "Seconds the pane has been in its agent state"
 .It Li "pane_agent_state" Ta "" Ta "Sidebar state of pane (shell, running, busy, waiting, done)"
+.It Li "pane_agent_task" Ta "" Ta "What the pane is working on (notify -T or pane title)"
 .It Li "pane_at_bottom" Ta "" Ta "1 if pane is at the bottom of window"
 .It Li "pane_at_left" Ta "" Ta "1 if pane is at the left of window"
 .It Li "pane_at_right" Ta "" Ta "1 if pane is at the right of window"
@@ -8591,7 +8592,10 @@ columns.
 .Xc
 .Fl a
 sets the activity text shown beside the agent in the sidebar (for example the
-tool a coding agent is running); an empty string clears it.
+tool a coding agent is running) and
+.Fl T
+what the agent is working on, shown under the agent (by default the pane
+title is used); an empty string clears either.
 .Pp
 Add
 .Ar message

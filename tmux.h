@@ -1410,6 +1410,7 @@ struct window_pane {
 	time_t		 sb_since;
 	char		*sb_cmd;
 	char		*sb_activity;
+	char		*sb_task;
 
 	int		 border_gc_set;
 	struct grid_cell border_gc;
@@ -3476,6 +3477,8 @@ int	 sidebar_state_from_name(const char *);
 int	 sidebar_pane_state(struct window_pane *);
 void	 sidebar_pane_set_state(struct window_pane *, int);
 void	 sidebar_pane_set_activity(struct window_pane *, const char *);
+void	 sidebar_pane_set_task(struct window_pane *, const char *);
+const char *sidebar_pane_task(struct window_pane *);
 struct window_pane *sidebar_selected(struct client *);
 void	 sidebar_select_move(struct client *, int);
 int	 sidebar_jump(struct client *, struct window_pane *);

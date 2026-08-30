@@ -34,9 +34,10 @@ const struct cmd_entry cmd_notify_entry = {
 	.name = "notify",
 	.alias = NULL,
 
-	.args = { "a:Cc:l:nrs:S:t:", 0, 1, NULL },
+	.args = { "a:Cc:l:nrs:S:t:T:", 0, 1, NULL },
 	.usage = "[-Cnr] [-a activity] [-c target-client] [-l level] "
-		 "[-s state] [-S source] " CMD_TARGET_PANE_USAGE " [message]",
+		 "[-s state] [-S source] [-T task] " CMD_TARGET_PANE_USAGE
+		 " [message]",
 
 	.target = { 't', CMD_FIND_PANE, CMD_FIND_CANFAIL },
 
@@ -125,6 +126,14 @@ cmd_notify_exec(struct cmd *self, struct cmdq_item *item)
 		sidebar_pane_set_activity(wp, args_get(args, 'a'));
 		did = 1;
 	}
+	if (args_has(args, 'T')) {
+		if (wp == NULL) {
+			cmdq_error(item, "no target pane");
+			return (CMD_RETURN_ERROR);
+		}
+		sidebar_pane_set_task(wp, args_get(args, 'T'));
+		did = 1;
+	}
 
 	if (args_count(args) == 1) {
 		level = args_get(args, 'l');
@@ -163,8 +172,8 @@ cmd_notify_exec(struct cmd *self, struct cmdq_item *item)
 	}
 
 	if (!did) {
-		cmdq_error(item, "nothing to do: give a message, -a, -s, -n, "
-		    "-r or -C");
+		cmdq_error(item, "nothing to do: give a message, -a, -T, -s, "
+		    "-n, -r or -C");
 		return (CMD_RETURN_ERROR);
 	}
 	return (CMD_RETURN_NORMAL);

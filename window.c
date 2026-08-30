@@ -1549,6 +1549,7 @@ window_pane_free(struct window_pane *wp)
 	free(wp->searchstr);
 	free(wp->sb_cmd);
 	free(wp->sb_activity);
+	free(wp->sb_task);
 	screen_free(&wp->status_screen);
 	screen_free(&wp->base);
 	free(wp->r.ranges);

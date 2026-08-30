@@ -59,6 +59,7 @@ matching.
 | `prefix S`   | Agent mode: `j`/`k` select, `Enter` jump, `p` peek at the scrollback (popup), `K` kill (with confirm), `i` send a line, `n` next alert, `q` back |
 | `prefix <` / `>` | Narrower / wider sidebar |
 | `prefix O`   | Overview: every session, window and pane as a tree with agent state, activity and time, plus a live preview of the selected pane (`Enter` jumps, `q` closes). The big version of the sidebar. |
+| `prefix H`   | HQ popup — netwatch for now (tasks, cockpit runs, traces, approvals); theme only |
 | `prefix T`   | Palette menu (theme only, see below) |
 
 ## Options (session options, `set -g …`)
@@ -136,6 +137,9 @@ notify [-Cnr] [-c target-client] [-l level] [-s state] [-S source] [-t target-pa
   (`busy`, `waiting`, `done`, `running`, `idle`, `auto`) and add an alert.
 - `tmux notify -a "Bash: make -j8"` — set the activity text shown beside the
   agent (`-a ""` clears it).
+- `tmux notify -T "Sidebar bauen"` — set what the agent is working on; shown
+  as a second line under the agent and in the overview. Without it the pane
+  title is used (Claude Code sets it to a summary of the conversation).
 - `tmux notify -n` — jump to the oldest unread alert.
 - `tmux notify -r` — mark all read; `tmux notify -C` — clear.
 
@@ -177,8 +181,8 @@ make -j8 && tmux notify -l ok -S build "make ok" || tmux notify -l error -S buil
 
 `#{sidebar_width}` (0 when hidden), `#{alert_count}` (unread alerts),
 `#{pane_agent_state}` (`shell`, `running`, `busy`, `waiting`, `done`),
-`#{pane_agent_activity}`, `#{pane_agent_since}` (seconds in the current
-state), `#{sidebar_selected_pane}` and `#{sidebar_selected_cmd}` are available
+`#{pane_agent_activity}`, `#{pane_agent_task}`, `#{pane_agent_since}`
+(seconds in the current state), `#{sidebar_selected_pane}` and `#{sidebar_selected_cmd}` are available
 in status lines, prompts, `choose-tree -F` and `if -F`.
 
 ## Building and the `amux` command
